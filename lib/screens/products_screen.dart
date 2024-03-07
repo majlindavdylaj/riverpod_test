@@ -15,7 +15,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   void initState() {
-    ProductService().getProducts();
     super.initState();
   }
 
@@ -27,30 +26,35 @@ class _ProductsScreenState extends State<ProductsScreen> {
         backgroundColor: Colors.purple,
       ),
       body: Consumer(
-        builder: (_, ref, __){
-          final getProducts = ref.watch(getProductProvider);
-          return getProducts.when(
-            loading: () => const CircularProgressIndicator(),
-            error: (err, stack) => Text('Error: $err'),
-            data: (_) {
-              final products = ref.watch(productProvider).products;
-              return ListView.builder(
-                itemCount: products.length,
-                itemBuilder: (_, index){
-                  Product product = products[index];
-                  return Text('${product.brand} -- $index');
+          builder: (_, ref, __){
+            final getProducts = ref.watch(getProductProvider(context));
+            return RefreshIndicator(
+              onRefresh: () async {
+                await ref.refresh(getProductProvider(context).future);
+              },
+              child: getProducts.when(
+                loading: () => const CircularProgressIndicator(),
+                error: (err, stack) => Text('Error: $err'),
+                data: (_) {
+                  final products = ref.watch(productProvider(context)).products;
+                  return ListView.builder(
+                    itemCount: products.length,
+                    itemBuilder: (_, index){
+                      Product product = products[index];
+                      return Text('${product.brand} -- $index');
+                    },
+                  );
                 },
-              );
-            },
-          );
-        },
-      ),
+              ),
+            );
+          },
+        ),
       floatingActionButton: Consumer(
         builder: (_, ref, __){
           return FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () {
-              ref.read(productProvider.notifier).getProducts();
+              ref.read(productProvider(context).notifier).getProducts();
             },
           );
         },
